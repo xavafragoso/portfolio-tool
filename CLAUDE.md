@@ -137,6 +137,18 @@ python notebooks/analisis.py          # corre el pipeline completo (datos sinté
 - **Dashboard nuevo** (el HTML del legacy, módulo N, no se portó; `dashboard/`
   está vacío a propósito)
 
+## Estado actual
+
+- ✅ Portados: `fetch`, `optimization`, `risk`, `stress`, `factors`, `regime`,
+  `projection`, `rebalance`, `technical`, `export`
+- ⏳ Pendientes fase 2: `fundamental.py`, `signals.py`, `news.py`
+- ⏳ Pendientes fase 2: `dashboard/` (base HTML ya existe en legacy como
+  `financial_intelligence_system_rams_swiss_visuals_v2.html`)
+- 🐛 Nota: `kaleido` debe estar instalado para que el PDF incluya gráficas
+  embebidas
+- 🐛 Nota: el nombre real del notebook legacy es
+  `markowitz_v3_institucional.ipynb`
+
 ## Convenciones
 
 - No comparar números contra el notebook viejo: los datos son distintos
