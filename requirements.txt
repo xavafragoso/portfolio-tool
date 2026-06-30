@@ -1,0 +1,39 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Portfolio Tool — dependencias
+# Versiones verificadas como mutuamente compatibles sobre Python 3.12–3.14
+# (stack científico numpy 2.x / pandas 3.x). Se usan mínimos abiertos para
+# permitir resolución, con notas donde hay restricciones reales.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# --- Núcleo numérico / datos ---
+numpy>=1.26
+pandas>=2.2            # el código usa DataFrame.map (reemplazo de applymap, removido en pandas 3.0)
+scipy>=1.11
+scikit-learn>=1.3      # LedoitWolf, KMeans, StandardScaler
+statsmodels>=0.14      # OLS de factores Fama-French (factors.py) — REQUERIDO
+
+# --- Datos de mercado ---
+yfinance>=0.2.40
+
+# --- Optimización de portafolios ---
+# Listado por requerimiento del proyecto. NOTA: la lógica portada del notebook
+# legacy NO usa PyPortfolioOpt (optimiza con scipy.optimize + sklearn.LedoitWolf).
+# Se incluye para la fase siguiente / comparación.
+PyPortfolioOpt>=1.5.5
+
+# --- Visualización ---
+plotly>=5.20
+kaleido>=0.2.1         # exportación de figuras Plotly a PNG para el PDF (opcional en runtime)
+
+# --- Exportación de reportes ---
+openpyxl>=3.1          # Excel
+fpdf2>=2.7             # PDF (clase PortfolioPDF, fix unicode _t())
+
+# --- Notebook / interactividad ---
+ipywidgets>=8.0
+jupytext>=1.16         # convertir notebooks/analisis.py <-> .ipynb
+tqdm>=4.66             # barras de progreso (descargas, frontera) — REQUERIDO
+
+# --- Configuración / IA (fase siguiente: fundamental, noticias) ---
+python-dotenv>=1.0
+google-genai>=0.3      # aún no usado por los módulos analíticos portados

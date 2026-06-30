@@ -1,0 +1,13 @@
+.env
+venv/
+__pycache__/
+outputs/
+.ipynb_checkpoints/
+
+# Artefactos comunes
+*.pyc
+.DS_Store
+.vscode/
+
+# Settings locales de Claude Code
+.claude/settings.local.json
