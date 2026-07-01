@@ -139,13 +139,26 @@ python notebooks/analisis.py          # corre el pipeline completo (datos sinté
 
 ## Estado actual
 
-- ✅ Portados: `fetch`, `optimization`, `risk`, `stress`, `factors`, `regime`,
-  `projection`, `rebalance`, `technical`, `export`
-- ⏳ Pendientes fase 2: `fundamental.py`, `signals.py`, `news.py`
-- ⏳ Pendientes fase 2: `dashboard/` (base HTML ya existe en legacy como
-  `financial_intelligence_system_rams_swiss_visuals_v2.html`)
+- ✅ Portados (Fase 1): `fetch`, `optimization`, `risk`, `stress`, `factors`,
+  `regime`, `projection`, `rebalance`, `technical`, `export`
+- ✅ Fase 2 completada: `fundamental.py`, `signals.py`, `news.py`
+  - `fundamental.py`: métricas de valuación/rentabilidad/crecimiento/solidez/precio
+    vía yfinance `.info` (ETFs → `None` sin romper).
+  - `signals.py`: swing trading triple-barrier (López de Prado, sin ML);
+    indicadores calculados localmente; ATR14 con proxy close-to-close (datos solo-cierre).
+  - `news.py`: noticias de yfinance + clasificación con Gemini `gemini-2.5-flash`
+    (prompt few-shot, salida JSON estricta, parseo defensivo, rate-limit 1 s/ticker).
+  - `export.py`: nueva `exportar_json()` → `outputs/data.json` con base analítica
+    (derivada de `R`) + secciones `fundamental`, `senales`, `noticias`.
+    **Nota:** `export.py` no generaba JSON antes; el esquema base de `data.json`
+    se definió aquí y Fase 3 lo puede ajustar al cablear el dashboard.
+- ⏳ Pendiente Fase 3: `dashboard/index.html` — conectar a `data.json`
+  (base HTML ya movida a `dashboard/index.html` desde el legacy
+  `financial_intelligence_system_rams_swiss_visuals_v2.html`).
 - 🐛 Nota: `kaleido` debe estar instalado para que el PDF incluya gráficas
   embebidas
+- 🐛 Nota: `news.py` requiere `GEMINI_API_KEY` en `.env`; sin key, degrada a
+  entradas con campo `error` sin romper el pipeline.
 - 🐛 Nota: el nombre real del notebook legacy es
   `markowitz_v3_institucional.ipynb`
 

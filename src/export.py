@@ -1,11 +1,14 @@
 # %% [markdown]
-# # export — Generación de Excel y PDF institucional
+# # export — Generación de Excel, PDF y JSON institucional
 #
-# Módulos O y P del notebook legacy. Contiene:
+# Módulos O y P del notebook legacy + exportación JSON para el dashboard. Contiene:
 # - `_t()`  : sanitizador de texto a latin-1 para fpdf2 (fix de encoding ya
 #             resuelto — acentos y guiones largos). **No modificar.**
 # - `PortfolioPDF` : clase FPDF con header/footer/tablas/KPIs del legacy.
 # - `exportar_excel()` / `exportar_pdf()` : extraídas del callback monolítico.
+# - `exportar_json()` : [Fase 2] arma `outputs/data.json` con la base analítica
+#             (derivada de `R`) + las 3 secciones nuevas (fundamental, señales,
+#             noticias). Ese archivo alimentará `dashboard/index.html` en Fase 3.
 #
 # Adaptaciones respecto a Colab:
 # - Se elimina `google.colab.files.download()`; los archivos se escriben a
@@ -17,6 +20,7 @@
 
 # %%
 import os
+import json
 from datetime import datetime
 
 import numpy as np
@@ -360,4 +364,105 @@ def exportar_pdf(R, ruta=None, img_dir=None):
 
     pdf.output(ruta)
     print(f'✅ PDF: {ruta} ({os.path.getsize(ruta) // 1024} KB)')
+    return ruta
+
+
+# %% [markdown]
+# ## [Fase 2] Exportación a JSON para el dashboard
+#
+# `export.py` no generaba JSON antes; esta función crea `outputs/data.json` con
+# una **base analítica** derivada del dict de resultados `R` (estadísticos,
+# portafolios, riesgo, stress, Monte Carlo, rebalanceo, regímenes) y le agrega
+# **al final** las 3 secciones nuevas de Fase 2: `fundamental`, `senales`,
+# `noticias`. Ese archivo lo consumirá `dashboard/index.html` en Fase 3.
+
+# %%
+def _a_serializable(obj):
+    """Convierte estructuras con tipos numpy/pandas a algo serializable a JSON.
+
+    DataFrames → lista de registros; Series → dict; escalares numpy → nativos;
+    NaN/Inf → None; Timestamps → ISO. Recorre dicts y listas de forma recursiva.
+    """
+    if isinstance(obj, dict):
+        return {str(k): _a_serializable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_a_serializable(v) for v in obj]
+    if isinstance(obj, pd.DataFrame):
+        return _a_serializable(obj.reset_index().to_dict('records'))
+    if isinstance(obj, pd.Series):
+        return _a_serializable(obj.to_dict())
+    if isinstance(obj, pd.Timestamp):
+        return obj.isoformat()
+    if isinstance(obj, np.generic):
+        obj = obj.item()
+    if isinstance(obj, np.ndarray):
+        return _a_serializable(obj.tolist())
+    if isinstance(obj, float):
+        return obj if np.isfinite(obj) else None
+    return obj
+
+
+def exportar_json(R, fundamental=None, senales=None, noticias=None, ruta=None):
+    """Escribe `outputs/data.json` con la base analítica + secciones Fase 2.
+
+    Parámetros
+    ----------
+    R          : dict de resultados del pipeline (ver `notebooks/analisis.py`).
+    fundamental: salida de `fundamental.obtener_fundamentales()`.
+    senales    : salida de `signals.generar_senales()`.
+    noticias   : salida de `news.analizar_noticias()`.
+    ruta       : destino; por defecto `outputs/data.json`.
+
+    Retorna la ruta del archivo escrito.
+    """
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    if ruta is None:
+        ruta = os.path.join(OUTPUT_DIR, 'data.json')
+
+    tickers = R.get('TICKERS', [])
+
+    # Portafolios optimizados (pesos por ticker)
+    portafolios = {}
+    for key, nm in [('pmv', 'PMV'), ('pms', 'PMS'),
+                    ('prp', 'RiskParity'), ('pbl', 'BlackLitterman')]:
+        p = R.get(key)
+        if p is None:
+            continue
+        portafolios[nm] = {
+            'rendimiento': p.get('rendimiento'),
+            'riesgo':      p.get('riesgo'),
+            'sharpe':      p.get('sharpe'),
+            'pesos':       {t: w for t, w in zip(tickers, p.get('pesos', []))},
+        }
+
+    # ── Secciones que ya formaban parte del análisis (base) ──────────────────
+    data = {
+        'meta': {
+            'tickers':   tickers,
+            'n_activos': R.get('N'),
+            'nav':       R.get('NAV'),
+            'rf_anual':  R.get('RF_A'),
+            'shrinkage': R.get('shrinkage'),
+            'fecha_ini': R.get('FECHA_INI'),
+            'fecha_fin': R.get('FECHA_FIN'),
+            'generado':  datetime.today().isoformat(timespec='seconds'),
+        },
+        'estadisticos':   R.get('stats'),
+        'portafolios':    portafolios,
+        'riesgo':         R.get('df_riesgo'),
+        'stress':         R.get('df_stress'),
+        'montecarlo':     R.get('mc_rows'),
+        'rebalanceo_pms': R.get('df_reb_pms'),
+        'regimenes':      R.get('reg_stats'),
+    }
+
+    # ── Secciones nuevas de Fase 2 (agregadas al final) ──────────────────────
+    data['fundamental'] = fundamental
+    data['senales']     = senales
+    data['noticias']    = noticias
+
+    limpio = _a_serializable(data)
+    with open(ruta, 'w', encoding='utf-8') as f:
+        json.dump(limpio, f, ensure_ascii=False, indent=2, allow_nan=False)
+    print(f'✅ JSON: {ruta} ({os.path.getsize(ruta) // 1024} KB)')
     return ruta
