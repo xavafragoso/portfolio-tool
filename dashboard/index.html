@@ -601,6 +601,10 @@ body:not(.light)::before{background:linear-gradient(90deg,rgba(255,255,255,.028)
 .c-green{color:var(--green)!important}.c-red{color:var(--red)!important}.c-amber{color:var(--amber)!important}.c-blue{color:var(--blue)!important}.pill-green{color:var(--green)!important}.pill-red{color:var(--red)!important}.pill-amber{color:var(--amber)!important}.pill-blue{color:var(--blue)!important}
 /* Light-mode default: the system opens in the Swiss/Rams light surface */
 
+/* CAMBIO 1 — cards intro del Resumen lado a lado (2 columnas) */
+.home-intro{align-items:stretch}
+.home-intro .insight{margin-bottom:0!important;height:100%}
+@media(max-width:820px){.home-intro{grid-template-columns:1fr}}
 </style>
 </head>
 <body class="light">
@@ -742,6 +746,7 @@ body:not(.light)::before{background:linear-gradient(90deg,rgba(255,255,255,.028)
       <div class="sh-sub">Resumen ejecutivo con las métricas más importantes y alertas activas.</div>
     </div>
 
+    <div class="g2 home-intro">
     <div class="insight i-info">
       <div class="i-label">📓 Fuente de datos actualizada</div>
       <div class="i-text">Este HTML fue regenerado usando la configuración del notebook <b>markowitz_v3_institucional(1).ipynb</b>: <b>15 activos</b>, NAV <b>$137,723.85</b>, tasa libre de riesgo <b>5.25%</b>, pesos permitidos <b>5%–25%</b>, Black‑Litterman tau <b>0.05</b> y Monte Carlo <b>10,000</b> simulaciones.</div>
@@ -754,6 +759,7 @@ body:not(.light)::before{background:linear-gradient(90deg,rgba(255,255,255,.028)
       <div class="i-text">Tu portafolio bajó <b>–$3,890 (–2.7%)</b> hoy. META (–$453), QQQM (–$657) y VOO (–$1,207) concentran el 60% de la pérdida. <b>BRK-B fue el único en verde: +$266</b>, demostrando que actúa como cobertura natural contra tus posiciones tech.</div>
       <div class="i-action">💡 BRK-B y SLV son los mejores amortiguadores de tu portafolio en días como hoy. El modelo sugiere aumentar ambas posiciones.</div>
     </div>
+    </div><!-- /g2 home-intro -->
 
     <div class="g4">
       <div class="card">
