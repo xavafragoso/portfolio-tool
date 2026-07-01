@@ -605,6 +605,12 @@ body:not(.light)::before{background:linear-gradient(90deg,rgba(255,255,255,.028)
 .home-intro{align-items:stretch}
 .home-intro .insight{margin-bottom:0!important;height:100%}
 @media(max-width:820px){.home-intro{grid-template-columns:1fr}}
+
+/* CAMBIO 2B — selector de tickers (Análisis técnico) legible en modo light */
+body.light .tech-selector{background:#EDF0F6!important;border:1px solid #C9CDD3!important;box-shadow:inset 2px 2px 5px rgba(0,0,0,.05), inset -2px -2px 5px rgba(255,255,255,.9)!important}
+body.light .tech-tk-btn{color:#50565F}
+body.light .tech-tk-btn:hover{color:#161616}
+body.light .tech-tk-btn.active{background:#F7F8FB!important;border-color:#C9CDD3!important;color:#161616!important}
 </style>
 </head>
 <body class="light">
@@ -1761,12 +1767,16 @@ function selectTech(tk, el) {
 // PLOTLY CHARTS DEMO
 // ════════════════════════════════════════
 function buildCharts() {
+  // CAMBIO 2A: en modo light las líneas del grid Plotly usan tonos suaves
+  const _light = document.body.classList.contains('light');
+  const _grid = _light ? 'rgba(0,0,0,0.07)' : '#1e2130';
+  const _zero = _light ? 'rgba(0,0,0,0.12)' : '#1e2130';
   const dark = {
     paper_bgcolor:'transparent', plot_bgcolor:'transparent',
-    font:{color:'#8892aa',family:'DM Sans,sans-serif',size:11},
+    font:{color: _light ? '#50565F' : '#8892aa', family:'DM Sans,sans-serif',size:11},
     margin:{l:40,r:20,t:20,b:40},
-    xaxis:{gridcolor:'#1e2130',linecolor:'#1e2130',zerolinecolor:'#1e2130'},
-    yaxis:{gridcolor:'#1e2130',linecolor:'#1e2130',zerolinecolor:'#1e2130'},
+    xaxis:{gridcolor:_grid,linecolor:_zero,zerolinecolor:_zero},
+    yaxis:{gridcolor:_grid,linecolor:_zero,zerolinecolor:_zero},
   };
 
   // Sector chart
@@ -2161,6 +2171,8 @@ function toggleTheme(){
   const isLight=document.body.classList.contains('light');
   localStorage.setItem('fis-theme', isLight?'light':'dark');
   document.querySelectorAll('.theme-toggle span').forEach(s=>s.textContent=isLight?'Dark':'Light');
+  // CAMBIO 2A: reconstruir gráficas para que el grid tome el color del modo actual
+  try{ buildCharts(); }catch(e){}
   setTimeout(()=>{try{window.dispatchEvent(new Event('resize'))}catch(e){}},50);
 }
 (function(){
