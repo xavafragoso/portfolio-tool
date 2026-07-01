@@ -65,10 +65,12 @@ Módulos del pipeline en `src/`:
 
 ## Stack tecnológico
 
-- **Python 3.10+** con `yfinance`, `PyPortfolioOpt`, `scikit-learn`, `scipy`, `plotly`, `fpdf2` (entre otras)
+- **Python 3.10+** con `yfinance`, `scipy`, `scikit-learn`, `statsmodels`, `plotly`, `fpdf2`, `openpyxl` (entre otras)
 - **Google Gemini API** (`gemini-2.5-flash`) para el análisis de noticias
 - **Dashboard**: HTML / CSS / JavaScript con Plotly — *single file*, sin framework
 - **Control de versiones**: Git + GitHub
+
+> **Nota sobre la optimización:** la optimización de portafolios (Markowitz, Mínima Varianza, Risk Parity y Black-Litterman) está implementada directamente con `scipy.optimize` (SLSQP) y `scikit-learn` (estimador de covarianza *Ledoit-Wolf*). `PyPortfolioOpt` figura como dependencia declarada en `requirements.txt` para comparación y uso futuro, pero **no** ejecuta la optimización actual.
 
 ---
 
