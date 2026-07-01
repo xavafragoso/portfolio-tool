@@ -78,9 +78,12 @@ Módulos del pipeline en `src/`:
 
 - **Optimización de portafolios:** Markowitz (Máximo Sharpe), Mínima Varianza, Risk Parity y Black-Litterman
 - **Riesgo:** VaR histórico / paramétrico / Monte Carlo, CVaR (Expected Shortfall), Drawdown, Calmar y Rolling Sharpe
-- **Machine Learning:** K-Means para detección de régimen de mercado (Bull / Bear / Lateral); regresión de factores Fama-French (proxy de 4 factores vía ETFs: Mercado, Tamaño/SMB, Valor/HML y Momentum)
+- **Machine Learning:** K-Means para detección de régimen de mercado (Bull / Bear / Lateral)
+- **Análisis de factores:** regresión OLS del portafolio contra un **proxy de 4 factores** estilo Fama-French/Carhart
 - **Señales:** *Triple-barrier method* (López de Prado, *Advances in Financial Machine Learning*)
 - **NLP:** *Prompt engineering* estructurado con ejemplos *few-shot* para clasificación de sentimiento
+
+> **Nota sobre los factores:** el análisis de factores **no** usa el dataset oficial de la *Kenneth R. French Data Library*, sino un **proxy construido con retornos de ETFs públicos** (vía `statsmodels` OLS): Mercado (`SPY`−`BIL`), Tamaño/SMB (`IWM`−`SPY`), Valor/HML (`IVE`−`IWF`) y Momentum (`MTUM`−`USMV`). Son 4 factores (los 3 clásicos de Fama-French más Momentum, à la Carhart), en versión aproximada para fines educativos.
 
 ---
 
