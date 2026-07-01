@@ -619,6 +619,11 @@ body.light .tech-tk-btn.active{background:#F7F8FB!important;border-color:#C9CDD3
 .g4 .card:first-child .stat-lbl,
 .g4 .card:first-child .stat-hint{color:var(--s1)!important;opacity:.7}
 .g4 .card:first-child .pill{background:rgba(128,128,128,.16)!important;color:var(--s1)!important;border-color:transparent!important}
+
+/* CAMBIO 4 — NAV en el header (chip compacto) + sidebar sin footer */
+.nav-chip{font-family:var(--mono);font-size:.65rem;letter-spacing:.05em;color:var(--sub);white-space:nowrap;padding:8px 12px;border-radius:999px;border:1px solid var(--b0);background:var(--s1);cursor:default}
+.nav-chip:hover{color:var(--txt)}
+.sidebar{padding-bottom:16px}
 </style>
 </head>
 <body class="light">
@@ -721,11 +726,6 @@ body.light .tech-tk-btn.active{background:#F7F8FB!important;border-color:#C9CDD3
     </div>
   </div>
 
-  <div class="sidebar-footer">
-    <div class="nav-lbl">NAV actual</div>
-    <div class="nav-val">$137,724</div>
-    <div class="nav-ts">07/06/2026 · 23:55 CST</div>
-  </div>
 </aside>
 
 <!-- ════════ MAIN ════════ -->
@@ -747,6 +747,7 @@ body.light .tech-tk-btn.active{background:#F7F8FB!important;border-color:#C9CDD3
       <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar modo">◐ <span>Light</span></button>
       <button class="export-btn" onclick="window.print()">Export PDF</button>
       <div class="regime-chip">🟢 Bull market activo</div>
+      <div class="nav-chip" title="NAV $137,723.85 · 07/06/2026 23:55 CST">NAV $137,724 · 07/06/2026 23:55 CST</div>
       <div class="alert-chip" onclick="nav('stress',null)">⚠️ Meta –6.4% · –$453 hoy</div>
     </div>
   </div>
