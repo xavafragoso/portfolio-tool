@@ -611,6 +611,14 @@ body.light .tech-selector{background:#EDF0F6!important;border:1px solid #C9CDD3!
 body.light .tech-tk-btn{color:#50565F}
 body.light .tech-tk-btn:hover{color:#161616}
 body.light .tech-tk-btn.active{background:#F7F8FB!important;border-color:#C9CDD3!important;color:#161616!important}
+
+/* CAMBIO 3 — texto legible en cards NAV y CVaR (primera card de cada g4).
+   El fondo de estas cards (var(--charcoal)) invierte por modo; var(--s1) es su
+   color complementario y contrasta en dark y light. El valor principal ya usa
+   var(--s1); aquí se corrigen label, hint y pill (estaban fijos en blanco). */
+.g4 .card:first-child .stat-lbl,
+.g4 .card:first-child .stat-hint{color:var(--s1)!important;opacity:.7}
+.g4 .card:first-child .pill{background:rgba(128,128,128,.16)!important;color:var(--s1)!important;border-color:transparent!important}
 </style>
 </head>
 <body class="light">
