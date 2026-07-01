@@ -685,6 +685,24 @@ body:not(.light)::before{background:linear-gradient(90deg,rgba(255,255,255,.028)
     </div>
   </div>
 
+  <!-- SECCIÓN 4: ANÁLISIS (Fase 2) -->
+  <div class="nav-section">
+    <div class="nav-section-btn open" onclick="toggleSection(this)">
+      Análisis <span class="chevron">›</span>
+    </div>
+    <div class="nav-children" style="max-height:300px">
+      <div class="nav-item" onclick="nav('fundamental',this)">
+        <span class="nav-icon">📊</span> Fundamental
+      </div>
+      <div class="nav-item" onclick="nav('noticias',this)">
+        <span class="nav-icon">📰</span> Noticias
+      </div>
+      <div class="nav-item" onclick="nav('swing',this)">
+        <span class="nav-icon">⚡</span> Swing Trading
+      </div>
+    </div>
+  </div>
+
   <div class="sidebar-footer">
     <div class="nav-lbl">NAV actual</div>
     <div class="nav-val">$137,724</div>
@@ -694,6 +712,12 @@ body:not(.light)::before{background:linear-gradient(90deg,rgba(255,255,255,.028)
 
 <!-- ════════ MAIN ════════ -->
 <main class="main">
+
+  <!-- BANNER MODO DEMO/OFFLINE (Fase 3) -->
+  <div id="offline-banner" style="display:none;background:rgba(232,197,106,.12);border:1px solid rgba(232,197,106,.35);color:var(--gold);font-size:.78rem;padding:9px 18px;margin:12px 22px 0;border-radius:10px;font-family:var(--mono);letter-spacing:.02em">
+    ⚠ Modo demo — para ver datos en vivo, sirve el archivo con:
+    <b style="color:var(--txt)">python -m http.server 8000</b> (desde la carpeta <b style="color:var(--txt)">dashboard/</b>)
+  </div>
 
   <!-- TOPBAR -->
   <div class="topbar">
@@ -1161,6 +1185,69 @@ body:not(.light)::before{background:linear-gradient(90deg,rgba(255,255,255,.028)
     </div>
   </div>
 
+  <!-- ════ PANEL: FUNDAMENTAL (Fase 2) ════ -->
+  <div class="panel" id="p-fundamental">
+    <div class="sh">
+      <div class="sh-q">Análisis fundamental</div>
+      <div class="sh-sub">Métricas de valuación, rentabilidad y solidez por activo (fuente: Yahoo Finance). Los ETFs no reportan varias métricas y se muestran como “N/A”.</div>
+    </div>
+    <div class="g3" id="fund-kpis" style="margin-bottom:16px"></div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Ticker</th><th>P/E</th><th>P/B</th><th>Margen Neto%</th>
+            <th>ROE%</th><th>Deuda/Equity</th><th>Beta</th><th>Dist. 52w High%</th>
+          </tr>
+        </thead>
+        <tbody id="fund-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════ PANEL: NOTICIAS (Fase 2) ════ -->
+  <div class="panel" id="p-noticias">
+    <div class="sh">
+      <div class="sh-q">Noticias del portafolio</div>
+      <div class="sh-sub">Titulares recientes por activo, clasificados por sentimiento y relevancia mediante IA (Gemini). Filtra por ticker.</div>
+    </div>
+    <div class="tech-selector" id="noticias-filtro"></div>
+    <div id="noticias-content"></div>
+  </div>
+
+  <!-- ════ PANEL: SWING TRADING (Fase 2) ════ -->
+  <div class="panel" id="p-swing">
+    <div class="sh">
+      <div class="sh-q">Señales de swing trading</div>
+      <div class="sh-sub">Metodología triple-barrier (López de Prado): entrada por cruce SMA20/50 + RSI + MACD; salida por take-profit, stop-loss o vencimiento de plazo.</div>
+    </div>
+    <div class="g3" id="swing-kpis" style="margin-bottom:16px"></div>
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+      <div class="card-title" style="padding:14px 16px 0">Señales abiertas</div>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Ticker</th><th>Fecha entrada</th><th>Precio</th><th>TP</th>
+            <th>SL</th><th>Fecha límite</th><th style="min-width:220px">Razón de entrada</th>
+          </tr>
+        </thead>
+        <tbody id="swing-abiertas-body"></tbody>
+      </table>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="card-title" style="padding:14px 16px 0">Señales históricas resueltas</div>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Ticker</th><th>Fecha entrada</th><th>Precio</th><th>TP</th><th>SL</th>
+            <th>Resolución</th><th>Resultado</th><th>Retorno%</th>
+          </tr>
+        </thead>
+        <tbody id="swing-resueltas-body"></tbody>
+      </table>
+    </div>
+  </div>
+
   </div><!-- /content -->
 </main>
 
@@ -1292,16 +1379,16 @@ const pos = [
   {tk:'SLV',  n:'iShares Silver',        acc:10, p:61.36,  pnl:-56.21,  wa:.004,wo:.050},
 ];
 
-const pmsW=[['VOO',.250],['BRK-B',.142],['GOOG',.094],['VT',.082],['QQQM',.068],
+let pmsW=[['VOO',.250],['BRK-B',.142],['GOOG',.094],['VT',.082],['QQQM',.068],
             ['NU',.068],['NBIS',.050],['NVDA',.050],['AAPL',.050],['MSFT',.050],
             ['NVO',.050],['PLTR',.050],['RDDT',.050],['SLV',.050],['META',.042]];
-const pmvW=[['VOO',.230],['BRK-B',.180],['SLV',.120],['VT',.090],['GOOG',.080],
+let pmvW=[['VOO',.230],['BRK-B',.180],['SLV',.120],['VT',.090],['GOOG',.080],
             ['NVO',.070],['AAPL',.060],['META',.050],['MSFT',.050],['NVDA',.020],
             ['QQQM',.020],['NU',.010],['PLTR',.010],['RDDT',.005],['NBIS',.005]];
-const rpW =[['VOO',.180],['BRK-B',.160],['SLV',.130],['VT',.110],['GOOG',.080],
+let rpW =[['VOO',.180],['BRK-B',.160],['SLV',.130],['VT',.110],['GOOG',.080],
             ['NVO',.070],['AAPL',.060],['MSFT',.060],['META',.040],['NVDA',.040],
             ['QQQM',.030],['NBIS',.020],['PLTR',.010],['NU',.005],['RDDT',.005]];
-const blW =[['VOO',.220],['BRK-B',.130],['NVDA',.100],['GOOG',.090],['META',.070],
+let blW =[['VOO',.220],['BRK-B',.130],['NVDA',.100],['GOOG',.090],['META',.070],
             ['VT',.080],['QQQM',.060],['AAPL',.050],['MSFT',.050],['NVO',.040],
             ['SLV',.040],['NBIS',.030],['NU',.020],['PLTR',.010],['RDDT',.010]];
 
@@ -1352,7 +1439,7 @@ const wishlist = [
   },
 ];
 
-const mcData = [
+let mcData = [
   {años:1, p5:108400,  p25:142200, p50:163800, p75:188600, p95:241000, prob_pos:.783, prob_2x:.041},
   {años:3, p5:92000,   p25:162400, p50:214000, p75:278500, p95:420000, prob_pos:.836, prob_2x:.184},
   {años:5, p5:78200,   p25:187300, p50:274000, p75:392000, p95:689000, prob_pos:.862, prob_2x:.378},
@@ -1376,6 +1463,9 @@ const NAV_META = {
   monte:     {t:'Monte Carlo',        s:'Proyección de patrimonio futuro'},
   regimen:   {t:'Régimen de mercado', s:'Clima actual del mercado'},
   optimizacion:{t:'Portafolios',      s:'4 versiones óptimas del portafolio'},
+  fundamental:{t:'Fundamental',       s:'Valuación, rentabilidad y solidez por activo'},
+  noticias:  {t:'Noticias',           s:'Titulares recientes clasificados por IA'},
+  swing:     {t:'Swing Trading',      s:'Señales triple-barrier (TP/SL/tiempo)'},
 };
 
 function nav(id, el) {
@@ -1823,16 +1913,233 @@ function buildCharts() {
 // ════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════
-renderPos();
-renderWeights('pms-bars', pmsW);
-renderWeights('pmv-bars', pmvW);
-renderWeights('rp-bars',  rpW);
-renderWeights('bl-bars',  blW);
-renderRebalanceo();
-renderWishlist();
-renderMC();
-renderTechSelector();
-buildCharts();
+// ── Fase 3: carga de data.json (overlay) + fallback offline ──────────────────
+window._data = null;
+
+function datosMinimos(){
+  // Estructura vacía para que el HTML no rompa en modo file:// (sin servidor).
+  return {portafolios:{}, montecarlo:[], fundamental:{metricas:[]}, noticias:{}, senales:[]};
+}
+
+function aplicarOverlay(d){
+  // Sobreescribe SOLO lo que data.json contiene; el resto queda hardcodeado.
+  if(d.portafolios){
+    const arr = p => (p && p.pesos) ? Object.entries(p.pesos) : null;
+    if(arr(d.portafolios.PMS))            pmsW = arr(d.portafolios.PMS);
+    if(arr(d.portafolios.PMV))            pmvW = arr(d.portafolios.PMV);
+    if(arr(d.portafolios.RiskParity))     rpW  = arr(d.portafolios.RiskParity);
+    if(arr(d.portafolios.BlackLitterman)) blW  = arr(d.portafolios.BlackLitterman);
+  }
+  if(Array.isArray(d.montecarlo) && d.montecarlo.length){
+    const pms = d.montecarlo.filter(m=>m.Port==='PMS');
+    if(pms.length) mcData = pms.map(m=>({años:m.Anos, p5:m.P5, p25:m.P25, p50:m.P50,
+      p75:m.P75, p95:m.P95, prob_pos:m.Prob_positivo, prob_2x:m.Prob_2x}));
+  }
+}
+
+function inicializar(d){
+  // Tabs existentes (usan datos hardcodeados o ya sobreescritos por overlay)
+  renderPos();
+  renderWeights('pms-bars', pmsW);
+  renderWeights('pmv-bars', pmvW);
+  renderWeights('rp-bars',  rpW);
+  renderWeights('bl-bars',  blW);
+  renderRebalanceo();
+  renderWishlist();
+  renderMC();
+  renderTechSelector();
+  buildCharts();
+  // Tabs nuevos (Fase 2) — leen de data.json
+  renderFundamental(d);
+  renderNoticias(d);
+  renderSwing(d);
+}
+
+async function cargarDatos(){
+  try{
+    const r = await fetch('data.json');
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    window._data = d;
+    aplicarOverlay(d);
+  }catch(e){
+    const b = document.getElementById('offline-banner');
+    if(b) b.style.display = 'block';
+    window._data = datosMinimos();
+  }
+  inicializar(window._data);
+}
+
+// ── Helpers de formato / color para los tabs nuevos ──────────────────────────
+const _naN = v => (v===null || v===undefined || (typeof v==='number' && !isFinite(v)));
+function _fmt(v, dec=1, suf=''){ return _naN(v) ? 'N/A' : (Number(v).toFixed(dec)+suf); }
+function _cls(v, {red, green, amber}={}){
+  if(_naN(v)) return '';
+  if(red && red(v)) return 'c-red';
+  if(green && green(v)) return 'c-green';
+  if(amber && amber(v)) return 'c-amber';
+  return '';
+}
+
+// ── TAB FUNDAMENTAL ──────────────────────────────────────────────────────────
+function renderFundamental(d){
+  const recs = (d && d.fundamental && d.fundamental.metricas) ? d.fundamental.metricas : [];
+  const kpis = document.getElementById('fund-kpis');
+  const body = document.getElementById('fund-body');
+  if(!kpis || !body) return;
+  if(!recs.length){
+    kpis.innerHTML = '';
+    body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--sub);padding:24px">Sin datos fundamentales (modo demo — sirve el dashboard con un servidor).</td></tr>';
+    return;
+  }
+  // KPIs globales ponderados por el peso de la posición actual
+  const wmap = {}; pos.forEach(p=>wmap[p.tk]=p.wa);
+  const wavg = field => {
+    let sw=0, sv=0;
+    recs.forEach(r=>{ const v=r[field], w=wmap[r.ticker]; if(!_naN(v)&&w){ sw+=w; sv+=w*v; } });
+    return sw>0 ? sv/sw : null;
+  };
+  kpis.style.gridTemplateColumns = 'repeat(4,1fr)';
+  const pePond=wavg('pe_trailing'), pbPond=wavg('price_to_book'),
+        roePond=wavg('roe'), betaPond=wavg('beta');
+  kpis.innerHTML = `
+    <div class="card"><div class="stat-lbl">P/E ponderado</div><div class="stat-val">${_fmt(pePond,1)}</div><div class="stat-hint">trailing, por peso de posición</div></div>
+    <div class="card"><div class="stat-lbl">P/B ponderado</div><div class="stat-val">${_fmt(pbPond,2)}</div><div class="stat-hint">price / book</div></div>
+    <div class="card"><div class="stat-lbl">ROE ponderado</div><div class="stat-val">${_naN(roePond)?'N/A':_fmt(roePond*100,1,'%')}</div><div class="stat-hint">retorno sobre equity</div></div>
+    <div class="card"><div class="stat-lbl">Beta ponderada</div><div class="stat-val">${_fmt(betaPond,2)}</div><div class="stat-hint">sensibilidad al mercado</div></div>`;
+
+  body.innerHTML = recs.map(r=>{
+    const pe=r.pe_trailing, pb=r.price_to_book, mn=r.margen_neto, roe=r.roe,
+          de=r.deuda_equity, beta=r.beta, dh=r.dist_52w_high_pct;
+    const cPe  = _cls(pe,  {red:v=>v>40||v<0, green:v=>v>0&&v<=25});
+    const cMn  = _cls(mn,  {red:v=>v<0, green:v=>v>0.20});
+    const cRoe = _cls(roe, {red:v=>v<0.05, green:v=>v>0.15, amber:v=>v>=0.05&&v<=0.15});
+    const cDe  = _cls(de,  {red:v=>v>150, green:v=>v<60});
+    const cBeta= _cls(beta,{red:v=>v>1.3, green:v=>v<0.9});
+    const cDh  = _cls(dh,  {green:v=>v>-5, red:v=>v<-25, amber:v=>v>=-25&&v<=-5});
+    return `<tr>
+      <td><span class="tk">${r.ticker}</span></td>
+      <td class="mono ${cPe}">${_fmt(pe,1)}</td>
+      <td class="mono">${_fmt(pb,2)}</td>
+      <td class="mono ${cMn}">${_naN(mn)?'N/A':_fmt(mn*100,1,'%')}</td>
+      <td class="mono ${cRoe}">${_naN(roe)?'N/A':_fmt(roe*100,1,'%')}</td>
+      <td class="mono ${cDe}">${_fmt(de,1)}</td>
+      <td class="mono ${cBeta}">${_fmt(beta,2)}</td>
+      <td class="mono ${cDh}">${_naN(dh)?'N/A':_fmt(dh,1,'%')}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── TAB NOTICIAS ─────────────────────────────────────────────────────────────
+function renderNoticias(d){
+  const noti = (d && d.noticias) ? d.noticias : {};
+  const filtro = document.getElementById('noticias-filtro');
+  const cont = document.getElementById('noticias-content');
+  if(!filtro || !cont) return;
+  const tks = Object.keys(noti);
+  if(!tks.length){
+    filtro.innerHTML = '';
+    cont.innerHTML = '<div class="card" style="color:var(--sub)">Sin noticias (modo demo — sirve el dashboard con un servidor).</div>';
+    return;
+  }
+  filtro.innerHTML = tks.map((tk,i)=>`<div class="tech-tk-btn${i===0?' active':''}" onclick="selectNoticia('${tk}',this)">${tk}</div>`).join('');
+  window._pintarNoticias = (tk)=>{
+    const items = noti[tk] || [];
+    const validas = items.filter(n=>n && n.sentimiento);
+    if(!validas.length){
+      cont.innerHTML = '<div class="card" style="color:var(--sub)">No disponible para '+tk+'.</div>';
+      return;
+    }
+    const sent = {positivo:['var(--green)','Positivo'], negativo:['var(--red)','Negativo'], neutro:['var(--sub)','Neutro']};
+    cont.innerHTML = validas.map(n=>{
+      const [col,lbl] = sent[n.sentimiento] || ['var(--sub)','Neutro'];
+      const rel = Math.max(0, Math.min(5, n.relevancia||0));
+      return `<div class="card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px">
+          <div style="font-weight:600;color:var(--txt);font-size:.92rem;flex:1">${n.titulo||''}</div>
+          <span style="flex-shrink:0;font-family:var(--mono);font-size:.66rem;padding:3px 9px;border-radius:8px;background:${col};color:#0b0d14;font-weight:700">${lbl}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+          <span class="mono" style="font-size:.7rem;color:var(--dim)">${n.fecha||''}</span>
+          <span style="font-size:.68rem;color:var(--dim)">Relevancia</span>
+          <div style="flex:1;max-width:120px;height:5px;background:var(--b1);border-radius:3px;overflow:hidden">
+            <div style="width:${rel/5*100}%;height:100%;background:var(--blue)"></div>
+          </div>
+          <span class="mono" style="font-size:.7rem;color:var(--sub)">${rel}/5</span>
+        </div>
+        <div style="font-size:.82rem;color:var(--sub);line-height:1.55;margin-bottom:6px">${n.resumen||''}</div>
+        ${n.impacto_portafolio?`<div style="font-size:.77rem;color:var(--blue)">💼 ${n.impacto_portafolio}</div>`:''}
+      </div>`;
+    }).join('');
+  };
+  window._pintarNoticias(tks[0]);
+}
+function selectNoticia(tk, el){
+  document.querySelectorAll('#noticias-filtro .tech-tk-btn').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  if(window._pintarNoticias) window._pintarNoticias(tk);
+}
+
+// ── TAB SWING TRADING ────────────────────────────────────────────────────────
+function renderSwing(d){
+  const sen = (d && Array.isArray(d.senales)) ? d.senales : [];
+  const kpis = document.getElementById('swing-kpis');
+  const abBody = document.getElementById('swing-abiertas-body');
+  const reBody = document.getElementById('swing-resueltas-body');
+  if(!kpis || !abBody || !reBody) return;
+
+  const abiertas = sen.filter(s=>s.resultado==='abierta');
+  const resueltas = sen.filter(s=>s.resultado!=='abierta');
+  const tp = resueltas.filter(s=>s.resultado==='TP').length;
+  const winRate = resueltas.length ? tp/resueltas.length*100 : 0;
+  const retProm = resueltas.length
+    ? resueltas.reduce((a,s)=>a+(s.retorno_pct||0),0)/resueltas.length : 0;
+
+  kpis.style.gridTemplateColumns = 'repeat(4,1fr)';
+  kpis.innerHTML = `
+    <div class="card"><div class="stat-lbl">Total señales</div><div class="stat-val">${sen.length}</div><div class="stat-hint">${resueltas.length} resueltas</div></div>
+    <div class="card"><div class="stat-lbl">Señales abiertas</div><div class="stat-val c-amber">${abiertas.length}</div><div class="stat-hint">sin resolver aún</div></div>
+    <div class="card"><div class="stat-lbl">Win rate</div><div class="stat-val ${winRate>=50?'c-green':'c-red'}">${winRate.toFixed(1)}%</div><div class="stat-hint">TP / resueltas</div></div>
+    <div class="card"><div class="stat-lbl">Retorno promedio</div><div class="stat-val ${retProm>=0?'c-green':'c-red'}">${retProm>=0?'+':''}${retProm.toFixed(2)}%</div><div class="stat-hint">señales resueltas</div></div>`;
+
+  const desc = (a,b)=> (a.fecha_entrada < b.fecha_entrada ? 1 : -1);
+  if(!abiertas.length){
+    abBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:18px">Sin señales abiertas.</td></tr>';
+  } else {
+    abBody.innerHTML = [...abiertas].sort(desc).map(s=>`<tr>
+      <td><span class="tk">${s.ticker}</span></td>
+      <td class="mono">${s.fecha_entrada}</td>
+      <td class="mono">${_fmt(s.precio_entrada,2)}</td>
+      <td class="mono c-green">${_fmt(s.take_profit,2)}</td>
+      <td class="mono c-red">${_fmt(s.stop_loss,2)}</td>
+      <td class="mono">${s.fecha_limite||'—'}</td>
+      <td style="font-size:.74rem;color:var(--sub)">${s.razon_entrada||''}</td>
+    </tr>`).join('');
+  }
+
+  const badge = {TP:['var(--green)','TP'], SL:['var(--red)','SL'], tiempo:['var(--amber)','Tiempo']};
+  if(!resueltas.length){
+    reBody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--sub);padding:18px">Sin señales resueltas.</td></tr>';
+  } else {
+    reBody.innerHTML = [...resueltas].sort(desc).map(s=>{
+      const [col,lbl] = badge[s.resultado] || ['var(--sub)', s.resultado];
+      const rc = (s.retorno_pct||0)>=0 ? 'c-green':'c-red';
+      return `<tr>
+        <td><span class="tk">${s.ticker}</span></td>
+        <td class="mono">${s.fecha_entrada}</td>
+        <td class="mono">${_fmt(s.precio_entrada,2)}</td>
+        <td class="mono c-green">${_fmt(s.take_profit,2)}</td>
+        <td class="mono c-red">${_fmt(s.stop_loss,2)}</td>
+        <td class="mono">${s.fecha_resolucion||'—'}</td>
+        <td><span style="font-family:var(--mono);font-size:.66rem;padding:2px 8px;border-radius:7px;background:${col};color:#0b0d14;font-weight:700">${lbl}</span></td>
+        <td class="mono ${rc}">${_naN(s.retorno_pct)?'—':((s.retorno_pct>=0?'+':'')+s.retorno_pct.toFixed(2)+'%')}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// Arranque
+cargarDatos();
 
 
 function toggleTheme(){

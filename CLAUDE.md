@@ -152,9 +152,22 @@ python notebooks/analisis.py          # corre el pipeline completo (datos sinté
     (derivada de `R`) + secciones `fundamental`, `senales`, `noticias`.
     **Nota:** `export.py` no generaba JSON antes; el esquema base de `data.json`
     se definió aquí y Fase 3 lo puede ajustar al cablear el dashboard.
-- ⏳ Pendiente Fase 3: `dashboard/index.html` — conectar a `data.json`
-  (base HTML ya movida a `dashboard/index.html` desde el legacy
-  `financial_intelligence_system_rams_swiss_visuals_v2.html`).
+- ✅ Fase 3 (parcial): `dashboard/index.html` conectado a `dashboard/data.json`
+  por **overlay** (`cargarDatos()`→`aplicarOverlay()`→`inicializar(d)`).
+  - El fetch sobreescribe SOLO lo que el JSON contiene: pesos de portafolios
+    (tab Portafolios) y Monte Carlo. Los demás tabs siguen con sus datos
+    **hardcodeados** (demo/fallback): posiciones/P&L, técnico, correlación,
+    drawdown, rolling, wishlist, rebalanceo narrativo.
+  - 3 tabs nuevos que leen del JSON real: **Fundamental** 📊, **Noticias** 📰,
+    **Swing Trading** ⚡ (sección "Análisis" del sidebar).
+  - Fallback offline (`file://`): banner amarillo + estructura mínima para no romper.
+  - `dashboard/data.json` se genera aparte (pipeline + Fase 2); **aún no** lo
+    produce `notebooks/analisis.py`.
+  - ⏳ Pendiente: ampliar `export.py` para que `data.json` cubra también las
+    secciones hoy hardcodeadas (posiciones, técnico, correlación, drawdown,
+    rolling), y luego reemplazar esos demos por datos del JSON.
+- 🐛 Nota: el dashboard debe servirse (`cd dashboard && python -m http.server 8000`);
+  con `file://` el `fetch('data.json')` falla y entra en modo demo.
 - 🐛 Nota: `kaleido` debe estar instalado para que el PDF incluya gráficas
   embebidas
 - 🐛 Nota: `news.py` requiere `GEMINI_API_KEY` en `.env`; sin key, degrada a
