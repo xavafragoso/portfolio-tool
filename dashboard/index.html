@@ -644,6 +644,13 @@ body.sidebar-collapsed .nav-children{max-height:none!important;overflow:visible}
 body.sidebar-collapsed .nav-item{font-size:0;justify-content:center;gap:0;padding:11px 0;margin:2px 6px}
 body.sidebar-collapsed .nav-item .nav-icon{font-size:.95rem}
 body.sidebar-collapsed .nav-badge{display:none}
+
+/* CAMBIO 6 — indicador visual en nav-item activo: dot + ícono a color */
+.nav-dot{display:none;width:6px;height:6px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-left:auto}
+.nav-item.active .nav-dot{display:block}
+.nav-item.active .nav-icon{filter:none!important;opacity:1!important;color:var(--blue)}
+/* Colapsado: el dot es el único indicador de sección activa → visible arriba-derecha */
+body.sidebar-collapsed .nav-item .nav-dot{position:absolute;top:7px;right:7px;margin:0}
 </style>
 </head>
 <body class="light">
@@ -2223,8 +2230,15 @@ function toggleSidebar(){
   setTimeout(()=>{ try{ document.querySelectorAll('.js-plotly-plot').forEach(g=>Plotly.Plots.resize(g)); }catch(e){} }, 230);
 }
 (function(){
-  // tooltip nativo (title) con el nombre, útil cuando el sidebar está colapsado
-  document.querySelectorAll('.nav-item').forEach(it=>{ if(!it.getAttribute('title')) it.setAttribute('title', it.textContent.trim()); });
+  // tooltip nativo (title) + dot indicador de activo (inyectado antes del badge)
+  document.querySelectorAll('.nav-item').forEach(it=>{
+    if(!it.getAttribute('title')) it.setAttribute('title', it.textContent.trim());
+    if(!it.querySelector('.nav-dot')){
+      const dot=document.createElement('span'); dot.className='nav-dot';
+      const badge=it.querySelector('.nav-badge');
+      if(badge) it.insertBefore(dot, badge); else it.appendChild(dot);
+    }
+  });
   if(localStorage.getItem('sidebar-collapsed')==='1'){
     document.body.classList.add('sidebar-collapsed');
     document.querySelectorAll('.sidebar-toggle').forEach(b=>b.textContent='›');
