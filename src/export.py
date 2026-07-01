@@ -449,6 +449,9 @@ def exportar_json(R, fundamental=None, senales=None, noticias=None, ruta=None):
         },
         'estadisticos':   R.get('stats'),
         'portafolios':    portafolios,
+        # posiciones: precio real + retornos por ticker (Fase 4). Los campos
+        # privados (acc, P&L de IBKR) NO viven aquí; siguen hardcodeados en el HTML.
+        'posiciones':     R.get('posiciones'),
         'riesgo':         R.get('df_riesgo'),
         'stress':         R.get('df_stress'),
         'montecarlo':     R.get('mc_rows'),

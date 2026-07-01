@@ -1935,6 +1935,14 @@ function aplicarOverlay(d){
     if(pms.length) mcData = pms.map(m=>({años:m.Anos, p5:m.P5, p25:m.P25, p50:m.P50,
       p75:m.P75, p95:m.P95, prob_pos:m.Prob_positivo, prob_2x:m.Prob_2x}));
   }
+  // Posiciones: SOLO se sobreescribe el precio actual con el real del JSON.
+  // acc (acciones) y pnl (P&L de IBKR) siguen hardcodeados — datos privados.
+  if(d.posiciones){
+    pos.forEach(p=>{
+      const jp = d.posiciones[p.tk];
+      if(jp && jp.precio_actual != null && !jp._stale) p.p = jp.precio_actual;
+    });
+  }
 }
 
 function inicializar(d){

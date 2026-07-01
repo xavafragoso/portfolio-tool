@@ -12,11 +12,14 @@
 # jupytext --to notebook notebooks/analisis.py
 # ```
 #
-# **Privacidad:** por defecto usa **datos sintéticos** (`USAR_DATOS_SINTETICOS=True`).
-# Para correr con datos reales de yfinance, poner el flag en `False`.
+# **Datos:** desde Fase 4 corre con **datos reales de Yahoo Finance**
+# (`USAR_DATOS_SINTETICOS=False`, ventana de 6 años para que stress/drawdown
+# tengan historia). Poner el flag en `True` vuelve al modo GBM offline.
+# Los precios de mercado son datos públicos; lo privado (acc, P&L de IBKR)
+# NO entra aquí — sigue hardcodeado en el dashboard.
 #
-# **Alcance:** módulos analíticos A–M + exportación Excel/PDF. El dashboard HTML
-# y los módulos de fundamental / swing trading / noticias quedan fuera (siguiente fase).
+# **Alcance (Fase 4):** pipeline analítico A–M + Fase 2 (fundamental, señales,
+# noticias) + exportación a Excel/PDF y a `dashboard/data.json` (`exportar_json`).
 
 # %%
 import os
@@ -48,7 +51,13 @@ from projection import monte_carlo_forward, fig_monte_carlo
 from rebalance import calcular_rebalanceo, fig_rebalanceo
 from technical import (calcular_rsi, calcular_macd, calcular_estocastico,
                        detectar_señales, fig_tecnica, fig_base100)
-from export import exportar_excel, exportar_pdf
+from fundamental import obtener_fundamentales
+from signals import generar_senales
+from news import analizar_noticias
+from export import exportar_excel, exportar_pdf, exportar_json
+
+from dotenv import load_dotenv
+load_dotenv(os.path.join(ROOT, '.env'))
 
 print('✅ Módulos importados desde src/')
 
@@ -58,9 +67,10 @@ print('✅ Módulos importados desde src/')
 # Reemplazan a los widgets interactivos del notebook legacy. Editar aquí.
 
 # %%
-USAR_DATOS_SINTETICOS = True   # privacidad: True = GBM offline; False = yfinance real
+USAR_DATOS_SINTETICOS = False  # Fase 4: False = yfinance real; True = GBM offline
 
 TICKERS, PESOS_ACTUALES = cargar_portafolio_csv(os.path.join(ROOT, 'data', 'synthetic_portfolio.csv'))
+TICKERS_ORIG = list(TICKERS)   # lista original (para detectar tickers descartados → _stale)
 
 PERIODO   = 'diaria'                     # 'diaria' | 'semanal' | 'mensual'
 TASA_RF   = 0.0525                       # tasa libre de riesgo anual (decimal)
@@ -71,7 +81,7 @@ BL_VIEWS  = 'NVDA:+0.05\nMETA:+0.03\nNVO:-0.02'
 BL_CONF   = 50                           # Black-Litterman: confianza %
 N_SIMS    = 10000                        # simulaciones Monte Carlo
 AÑOS_MC   = [1, 3, 5]                     # horizontes Monte Carlo
-NAV       = 137723.85                    # capital base USD
+NAV       = float(os.getenv('NAV_USD', 137723.85))  # capital base USD (desde .env)
 COMISION  = 0.005                        # comisión por operación (decimal)
 
 FACTOR    = {'diaria': 252, 'semanal': 52, 'mensual': 12}[PERIODO]
@@ -79,7 +89,7 @@ RF_P      = (1 + TASA_RF) ** (1 / FACTOR) - 1
 RF_A      = (1 + RF_P) ** FACTOR - 1
 IVL       = {'diaria': '1d', 'semanal': '1wk', 'mensual': '1mo'}[PERIODO]
 FECHA_FIN = datetime.today().strftime('%Y-%m-%d')
-FECHA_INI = (datetime.today() - timedelta(days=365 * 5)).strftime('%Y-%m-%d')
+FECHA_INI = (datetime.today() - timedelta(days=365 * 6)).strftime('%Y-%m-%d')  # 6 años
 
 print(f'  {len(TICKERS)} activos | {PERIODO} | RF={TASA_RF:.2%} | NAV=${NAV:,.0f}')
 print(f'  Modo datos: {"SINTÉTICOS (GBM)" if USAR_DATOS_SINTETICOS else "REALES (yfinance)"}')
@@ -287,7 +297,57 @@ fig_b100_plot = fig_base100(inds, TICKERS)
 print(f'  Indicadores calculados para {len(inds)} activos')
 
 # %% [markdown]
-# ## 15. [O/P] Exportación a Excel y PDF
+# ## 15. [Fase 4] Posiciones: precio real + retornos (YTD / 1m / 1y)
+#
+# Precio de cierre real y retornos por ticker desde `precios` (yfinance).
+# Si yfinance no devolvió datos para un ticker se marca `_stale: true` sin
+# romper el pipeline (manejo en el orquestador, sin tocar `fetch.py`).
+# Los campos privados (acciones y P&L de IBKR) NO se calculan aquí.
+
+# %%
+def _ret_back(serie, n):
+    """Retorno % respecto a `n` barras hacia atrás (None si no hay historia)."""
+    s = serie.dropna()
+    if len(s) > n:
+        return float(s.iloc[-1] / s.iloc[-1 - n] - 1) * 100
+    return None
+
+posiciones = {}
+for tk in TICKERS_ORIG:
+    if tk in precios.columns:
+        s = precios[tk].dropna()
+        r1m, r1y = _ret_back(s, 21), _ret_back(s, 252)
+        anio = s.index[-1].year
+        s_ytd = s[s.index.year == anio]
+        ytd = float(s.iloc[-1] / s_ytd.iloc[0] - 1) * 100 if len(s_ytd) > 1 else None
+        posiciones[tk] = {
+            'precio_actual': round(float(s.iloc[-1]), 4),
+            'retorno_ytd':   round(ytd, 2) if ytd is not None else None,
+            'retorno_1m':    round(r1m, 2) if r1m is not None else None,
+            'retorno_1y':    round(r1y, 2) if r1y is not None else None,
+            '_stale':        False,
+        }
+    else:
+        posiciones[tk] = {'precio_actual': None, 'retorno_ytd': None,
+                          'retorno_1m': None, 'retorno_1y': None, '_stale': True}
+
+_stale_tks = [t for t, p in posiciones.items() if p['_stale']]
+print(f'  Posiciones: {len(posiciones)} tickers | sin datos (_stale): {_stale_tks or "ninguno"}')
+
+# %% [markdown]
+# ## 16. [Fase 2] Fundamental · Señales swing · Noticias (Gemini)
+
+# %%
+print('  [j] Fundamentales (yfinance .info)...')
+fund = obtener_fundamentales(TICKERS)
+print('  [k] Señales swing (triple-barrier)...')
+sen = generar_senales(precios)
+print(f'      {len(sen)} señales generadas')
+print('  [l] Noticias + análisis Gemini...')
+noti = analizar_noticias(TICKERS)
+
+# %% [markdown]
+# ## 17. [O/P] Exportación a Excel y PDF
 #
 # Se arma el dict de resultados `R` y se generan los archivos en `outputs/`.
 # (El dashboard HTML — Módulo N del legacy — queda fuera de alcance esta fase.)
@@ -309,6 +369,7 @@ R = {
     'rec_pmv': rec_pmv, 'rec_pms': rec_pms,
     'betas_pmv_df': betas_pmv_df, 'betas_pms_df': betas_pms_df,
     'inds': inds,
+    'posiciones': posiciones,
     'figs': {
         'frontera': fig_fron_plot, 'corr': fig_corr_plot, 'stress': fig_stress(df_stress),
         'dd': fig_dd_plot, 'rolling': fig_roll_sh, 'mc': fig_mc_plot,
@@ -320,8 +381,19 @@ if fig_ff_plot is not None:
 ruta_excel, hojas = exportar_excel(R)
 ruta_pdf = exportar_pdf(R)
 
+# %% [markdown]
+# ## 18. [Fase 4] Exportación a dashboard/data.json
+#
+# Escribe el JSON que consume `dashboard/index.html`: base analítica + posiciones
+# (precio real) + fundamental + señales + noticias.
+
+# %%
+ruta_json = exportar_json(R, fundamental=fund, senales=sen, noticias=noti,
+                          ruta=os.path.join(ROOT, 'dashboard', 'data.json'))
+
 print('\n' + '=' * 62)
 print('  ANÁLISIS INSTITUCIONAL COMPLETO')
 print(f'  Excel : {ruta_excel}  ({hojas})')
 print(f'  PDF   : {ruta_pdf}')
+print(f'  JSON  : {ruta_json}')
 print('=' * 62)

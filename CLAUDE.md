@@ -7,7 +7,8 @@ ESTADO ACTUAL DEL PROYECTO:
 - Fase 1 ✅ Esqueleto del repo + módulos v3 portados desde Colab
 - Fase 2 ✅ fundamental.py, signals.py, news.py completados
 - Fase 3 ✅ dashboard conectado a data.json + 3 tabs nuevos
-- Fase 4 ⏳ Conectar analisis.py → data.json + subir a GitHub
+- Fase 4 ✅ analisis.py genera dashboard/data.json con datos reales de
+  Yahoo Finance (6 años) + sección posiciones; repo en GitHub (privado)
 
 ESTILO DE TRABAJO:
 - Responde siempre en español
@@ -186,11 +187,17 @@ python notebooks/analisis.py          # corre el pipeline completo (datos sinté
   - 3 tabs nuevos que leen del JSON real: **Fundamental** 📊, **Noticias** 📰,
     **Swing Trading** ⚡ (sección "Análisis" del sidebar).
   - Fallback offline (`file://`): banner amarillo + estructura mínima para no romper.
-  - `dashboard/data.json` se genera aparte (pipeline + Fase 2); **aún no** lo
-    produce `notebooks/analisis.py`.
-  - ⏳ Pendiente: ampliar `export.py` para que `data.json` cubra también las
-    secciones hoy hardcodeadas (posiciones, técnico, correlación, drawdown,
-    rolling), y luego reemplazar esos demos por datos del JSON.
+- ✅ Fase 4: `notebooks/analisis.py` genera `dashboard/data.json` con **datos
+  reales de Yahoo Finance** (ventana 6 años; `USAR_DATOS_SINTETICOS=False`).
+  - Corre el pipeline A–M + Fase 2 (fundamental, señales, noticias) y llama
+    `export.exportar_json(R, ..., ruta='dashboard/data.json')`.
+  - Nueva sección `posiciones` en el JSON: `precio_actual`, `retorno_ytd/1m/1y`
+    y `_stale` por ticker (calculada en el orquestador, sin tocar `fetch.py`).
+    En el dashboard **solo se sobrescribe el precio** de la tabla de posiciones
+    (`aplicarOverlay`); `acc` y P&L de IBKR siguen hardcodeados (privados).
+  - `NAV` se lee de `.env` (`NAV_USD`) con fallback `137723.85` si no está.
+  - ⏳ Pendiente: conectar al JSON las secciones aún hardcodeadas del dashboard
+    (técnico, correlación, drawdown, rolling, wishlist); y posiciones IBKR reales.
 - 🐛 Nota: el dashboard debe servirse (`cd dashboard && python -m http.server 8000`);
   con `file://` el `fetch('data.json')` falla y entra en modo demo.
 - 🐛 Nota: `kaleido` debe estar instalado para que el PDF incluya gráficas
