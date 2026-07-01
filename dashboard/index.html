@@ -624,12 +624,33 @@ body.light .tech-tk-btn.active{background:#F7F8FB!important;border-color:#C9CDD3
 .nav-chip{font-family:var(--mono);font-size:.65rem;letter-spacing:.05em;color:var(--sub);white-space:nowrap;padding:8px 12px;border-radius:999px;border:1px solid var(--b0);background:var(--s1);cursor:default}
 .nav-chip:hover{color:var(--txt)}
 .sidebar{padding-bottom:16px}
+
+/* CAMBIO 5 — sidebar colapsable */
+.sidebar{transition:width .2s ease}
+.main{transition:margin-left .2s ease}
+.sidebar-toggle{position:fixed;top:18px;left:202px;z-index:230;width:26px;height:26px;padding:0;
+  border-radius:50%;border:1px solid var(--b0);background:var(--s1);color:var(--sub);
+  font-size:1rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:left .2s ease,color .15s;box-shadow:2px 2px 6px var(--shadow-lo),-2px -2px 6px var(--shadow-hi)}
+.sidebar-toggle:hover{color:var(--txt);border-color:var(--b1)}
+body.sidebar-collapsed .sidebar{width:48px!important}
+body.sidebar-collapsed .main{margin-left:48px!important}
+body.sidebar-collapsed .sidebar-toggle{left:14px}
+body.sidebar-collapsed .logo-name,
+body.sidebar-collapsed .logo-nav,
+body.sidebar-collapsed .nav-section-btn{display:none}
+body.sidebar-collapsed .logo{padding:52px 0 14px;text-align:center}
+body.sidebar-collapsed .nav-children{max-height:none!important;overflow:visible}
+body.sidebar-collapsed .nav-item{font-size:0;justify-content:center;gap:0;padding:11px 0;margin:2px 6px}
+body.sidebar-collapsed .nav-item .nav-icon{font-size:.95rem}
+body.sidebar-collapsed .nav-badge{display:none}
 </style>
 </head>
 <body class="light">
 
 <!-- ════════ SIDEBAR ════════ -->
 <aside class="sidebar">
+  <button class="sidebar-toggle" onclick="toggleSidebar()" title="Colapsar / expandir menú" aria-label="Colapsar o expandir menú">‹</button>
   <div class="logo">
     <div class="logo-name">Financial Intelligence</div>
     <div class="logo-nav">Portfolio System · v4</div>
@@ -2191,6 +2212,23 @@ function toggleTheme(){
     const isLight=document.body.classList.contains('light');
     document.querySelectorAll('.theme-toggle span').forEach(s=>s.textContent=isLight?'Dark':'Light');
   });
+})();
+
+// CAMBIO 5 — sidebar colapsable con persistencia
+function toggleSidebar(){
+  const collapsed = document.body.classList.toggle('sidebar-collapsed');
+  localStorage.setItem('sidebar-collapsed', collapsed ? '1' : '0');
+  document.querySelectorAll('.sidebar-toggle').forEach(b=>b.textContent = collapsed ? '›' : '‹');
+  // reajustar gráficas Plotly tras la transición de ancho
+  setTimeout(()=>{ try{ document.querySelectorAll('.js-plotly-plot').forEach(g=>Plotly.Plots.resize(g)); }catch(e){} }, 230);
+}
+(function(){
+  // tooltip nativo (title) con el nombre, útil cuando el sidebar está colapsado
+  document.querySelectorAll('.nav-item').forEach(it=>{ if(!it.getAttribute('title')) it.setAttribute('title', it.textContent.trim()); });
+  if(localStorage.getItem('sidebar-collapsed')==='1'){
+    document.body.classList.add('sidebar-collapsed');
+    document.querySelectorAll('.sidebar-toggle').forEach(b=>b.textContent='›');
+  }
 })();
 </script>
 
