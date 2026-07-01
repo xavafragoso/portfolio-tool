@@ -206,6 +206,10 @@ python notebooks/analisis.py          # corre el pipeline completo (datos sinté
   entradas con campo `error` sin romper el pipeline.
 - 🐛 Nota: el nombre real del notebook legacy es
   `markowitz_v3_institucional.ipynb`
+- ⚠️ Gemini free tier: ~20 requests/día. Cada corrida completa consume 15
+  (1 por ticker). No correr el pipeline completo más de 1 vez/día. Próxima
+  mejora: flag `--skip-news` en `analisis.py` para correr el resto sin gastar
+  cuota de noticias.
 
 ## Convenciones
 
